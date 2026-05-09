@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/", label: "首页", icon: "⌂" },
   { href: "/chat", label: "AI 助手", icon: "◈" },
   { href: "/learn", label: "学习中心", icon: "◎" },
+  { href: "/lab", label: "漏洞靶场", icon: "✦" },
 ] as const;
 
 export default function ShellLayout({
