@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import TerminalSimulator from "@/components/lab/TerminalSimulator";
+import AttackChainFlow from "@/components/lab/AttackChainFlow";
+import StatusPanel from "@/components/lab/StatusPanel";
 
 /* ======================================================================
    数据层
@@ -20,6 +23,7 @@ interface VulnLab {
   icon: string;
   online: number;
   cveId?: string;
+  aiRisk: "低" | "中" | "高" | "极高";
 }
 
 interface VulnRankItem {
@@ -40,20 +44,11 @@ interface CveSimulation {
   status: "active" | "coming" | "offline";
 }
 
-interface AttackLog {
-  id: string;
-  time: string;
-  source: string;
-  target: string;
-  type: string;
-  status: "blocked" | "detected" | "analyzing";
-}
-
 /* ---------- 靶场列表 ---------- */
 const VULN_LABS: VulnLab[] = [
   {
     id: "sqli",
-    title: "SQL 注入靶场",
+    title: "SQL Injection",
     desc: "从 Union 注入到盲注，覆盖 MySQL / PostgreSQL / MSSQL 全场景实战",
     category: "SQL 注入",
     difficulty: "中级",
@@ -65,10 +60,11 @@ const VULN_LABS: VulnLab[] = [
     icon: "◈",
     online: 47,
     cveId: "CVE-2024-*",
+    aiRisk: "极高",
   },
   {
     id: "xss",
-    title: "XSS 攻防靶场",
+    title: "XSS Attack",
     desc: "反射型、存储型、DOM 型 XSS 漏洞利用与 CSP 绕过实战",
     category: "XSS",
     difficulty: "初级",
@@ -79,10 +75,11 @@ const VULN_LABS: VulnLab[] = [
     color: "cyan",
     icon: "⬡",
     online: 63,
+    aiRisk: "高",
   },
   {
     id: "upload",
-    title: "文件上传靶场",
+    title: "File Upload",
     desc: "绕过后缀检测、MIME 验证、内容检测，实现 Webshell 上传",
     category: "文件上传",
     difficulty: "中级",
@@ -93,10 +90,11 @@ const VULN_LABS: VulnLab[] = [
     color: "warn",
     icon: "▸",
     online: 31,
+    aiRisk: "高",
   },
   {
     id: "rce",
-    title: "命令执行靶场",
+    title: "Command Execution",
     desc: "OS 命令注入、代码执行漏洞利用与沙箱逃逸技术",
     category: "命令执行",
     difficulty: "高级",
@@ -108,10 +106,11 @@ const VULN_LABS: VulnLab[] = [
     icon: "◉",
     online: 28,
     cveId: "CVE-2024-*",
+    aiRisk: "极高",
   },
   {
     id: "ssrf",
-    title: "SSRF 靶场",
+    title: "SSRF",
     desc: "服务端请求伪造、内网探测与云元数据窃取实战",
     category: "SSRF",
     difficulty: "高级",
@@ -122,21 +121,23 @@ const VULN_LABS: VulnLab[] = [
     color: "purple",
     icon: "◎",
     online: 19,
+    aiRisk: "中",
   },
   {
-    id: "privesc",
-    title: "权限提升靶场",
-    desc: "Linux SUID / Windows UAC 提权与内核漏洞利用",
-    category: "权限提升",
+    id: "cve-sim",
+    title: "CVE Simulation",
+    desc: "Log4Shell / Spring4Shell / XZ Backdoor 真实漏洞复现",
+    category: "CVE 模拟",
     difficulty: "专家",
-    attackType: "提权攻击",
+    attackType: "综合攻击",
     learners: 980,
     completionRate: 18,
-    tags: ["SUID", "Kernel", "UAC", "Docker"],
+    tags: ["Log4Shell", "Spring4Shell", "XZ", "Zero-Day"],
     color: "danger",
     icon: "✦",
     online: 15,
     cveId: "CVE-2024-*",
+    aiRisk: "极高",
   },
 ];
 
@@ -158,15 +159,6 @@ const CVE_SIMULATIONS: CveSimulation[] = [
   { id: "c5", cveId: "CVE-2024-21762", title: "FortiOS Out-of-Bound Write", severity: "critical", cvss: 9.6, status: "active" },
 ];
 
-/* ---------- 攻击日志 ---------- */
-const ATTACK_LOGS: AttackLog[] = [
-  { id: "l1", time: "14:32:08", source: "192.168.1.105", target: "SQL-LAB-01", type: "SQL Injection", status: "blocked" },
-  { id: "l2", time: "14:31:45", source: "10.0.0.88", target: "XSS-LAB-03", type: "XSS Stored", status: "detected" },
-  { id: "l3", time: "14:30:22", source: "172.16.0.12", target: "RCE-LAB-01", type: "Command Exec", status: "analyzing" },
-  { id: "l4", time: "14:29:17", source: "192.168.2.44", target: "UPLOAD-LAB-02", type: "Webshell Upload", status: "blocked" },
-  { id: "l5", time: "14:28:03", source: "10.0.1.201", target: "SSRF-LAB-01", type: "SSRF Probe", status: "detected" },
-];
-
 /* ======================================================================
    样式映射
    ====================================================================== */
@@ -176,6 +168,13 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   "中级": "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
   "高级": "bg-red-500/10 text-red-400 border-red-500/30",
   "专家": "bg-purple-500/10 text-purple-400 border-purple-500/30",
+};
+
+const AI_RISK_COLORS: Record<string, string> = {
+  "低": "bg-green-500/10 text-green-400 border-green-500/30",
+  "中": "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  "高": "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  "极高": "bg-red-500/10 text-red-400 border-red-500/30 animate-pulse",
 };
 
 const COLOR_MAP = {
@@ -233,17 +232,7 @@ const SEVERITY_STYLES: Record<string, { color: string; label: string }> = {
   low: { color: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30", label: "LOW" },
 };
 
-const STATUS_STYLES: Record<string, { color: string; icon: string }> = {
-  blocked: { color: "text-green-400", icon: "✕" },
-  detected: { color: "text-yellow-400", icon: "!" },
-  analyzing: { color: "text-cyan-400", icon: "..." },
-};
-
-const TREND_ICONS: Record<string, string> = {
-  up: "↑",
-  down: "↓",
-  stable: "→",
-};
+const TREND_ICONS: Record<string, string> = { up: "↑", down: "↓", stable: "→" };
 
 /* ======================================================================
    子组件
@@ -264,10 +253,7 @@ function ScanBackground() {
 function ProgressBar({ value, barClass, bgClass }: { value: number; barClass: string; bgClass: string }) {
   return (
     <div className={`w-full h-1.5 rounded-full ${bgClass} overflow-hidden`}>
-      <div
-        className={`h-full rounded-full ${barClass} transition-all duration-700 ease-out`}
-        style={{ width: `${value}%` }}
-      />
+      <div className={`h-full rounded-full ${barClass} transition-all duration-700 ease-out`} style={{ width: `${value}%` }} />
     </div>
   );
 }
@@ -286,7 +272,7 @@ function OnlineBadge({ count }: { count: number }) {
 }
 
 /* ---------- 靶场卡片 ---------- */
-function LabCard({ lab }: { lab: VulnLab }) {
+function LabCard({ lab, onEnter }: { lab: VulnLab; onEnter: (lab: VulnLab) => void }) {
   const colors = COLOR_MAP[lab.color];
   return (
     <div
@@ -294,14 +280,13 @@ function LabCard({ lab }: { lab: VulnLab }) {
         cyber-card rounded-xl p-5 cursor-pointer group
         ${colors.border} ${colors.glow}
         transition-all duration-300
+        page-enter-animation
       `}
     >
       {/* 头部 */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-lg border border-current/20 flex items-center justify-center text-2xl ${colors.icon} group-hover:scale-110 transition-transform duration-300`}
-          >
+          <div className={`w-10 h-10 rounded-lg border border-current/20 flex items-center justify-center text-2xl ${colors.icon} group-hover:scale-110 transition-transform duration-300`}>
             {lab.icon}
           </div>
           <div>
@@ -320,18 +305,17 @@ function LabCard({ lab }: { lab: VulnLab }) {
       {/* 描述 */}
       <p className="text-zinc-500 text-sm leading-relaxed mb-3">{lab.desc}</p>
 
-      {/* 标签 */}
+      {/* 标签 + AI 风险评级 */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {lab.tags.map((tag) => (
-          <span key={tag} className={`text-[10px] font-mono px-2 py-0.5 border rounded ${colors.tag}`}>
-            {tag}
-          </span>
+          <span key={tag} className={`text-[10px] font-mono px-2 py-0.5 border rounded ${colors.tag}`}>{tag}</span>
         ))}
         {lab.cveId && (
-          <span className="text-[10px] font-mono px-2 py-0.5 border rounded bg-red-500/5 text-red-500/70 border-red-500/15">
-            {lab.cveId}
-          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 border rounded bg-red-500/5 text-red-500/70 border-red-500/15">{lab.cveId}</span>
         )}
+        <span className={`text-[10px] font-mono px-2 py-0.5 border rounded ${AI_RISK_COLORS[lab.aiRisk]}`}>
+          AI RISK: {lab.aiRisk}
+        </span>
       </div>
 
       {/* 完成率进度条 */}
@@ -349,8 +333,9 @@ function LabCard({ lab }: { lab: VulnLab }) {
           <span className="text-zinc-400">{lab.learners.toLocaleString()}</span> 参训
         </span>
         <button
+          onClick={(e) => { e.stopPropagation(); onEnter(lab); }}
           className={`
-            font-mono text-[10px] tracking-wider px-3 py-1.5 rounded-lg border
+            font-mono text-[10px] tracking-wider px-4 py-1.5 rounded-lg border
             transition-all duration-200 hover:scale-105
             ${colors.btn}
           `}
@@ -386,7 +371,6 @@ function VulnRankCard() {
                 border border-transparent hover:border-red-500/15 hover:bg-red-500/[0.02]
                 transition-all"
             >
-              {/* 排名 */}
               <span
                 className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-mono font-bold shrink-0
                   ${item.rank <= 3 ? "bg-red-500/15 text-red-400 border border-red-500/30" : "bg-zinc-800 text-zinc-500"}`}
@@ -394,24 +378,16 @@ function VulnRankCard() {
                 {item.rank}
               </span>
 
-              {/* 信息 */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-zinc-300 truncate">
-                    {item.name}
-                  </span>
-                  <span className={`text-[8px] font-mono px-1 py-0.5 border rounded ${sevStyle.color}`}>
-                    {sevStyle.label}
-                  </span>
+                  <span className="text-xs font-mono font-bold text-zinc-300 truncate">{item.name}</span>
+                  <span className={`text-[8px] font-mono px-1 py-0.5 border rounded ${sevStyle.color}`}>{sevStyle.label}</span>
                 </div>
                 <div className="text-[10px] font-mono text-zinc-600">{item.cve}</div>
               </div>
 
-              {/* 利用数 + 趋势 */}
               <div className="flex items-center gap-2 shrink-0">
-                <span className="font-mono text-[10px] text-zinc-500">
-                  {item.exploits.toLocaleString()}
-                </span>
+                <span className="font-mono text-[10px] text-zinc-500">{item.exploits.toLocaleString()}</span>
                 <span
                   className={`text-[10px] font-mono font-bold ${
                     item.trend === "up" ? "text-red-400" : item.trend === "down" ? "text-green-400" : "text-zinc-500"
@@ -439,9 +415,7 @@ function CveSimulationCard() {
             CVE <span className="text-cyan-400">模拟</span>
           </h3>
         </div>
-        <span className="font-mono text-[10px] text-cyan-500/40 border border-cyan-500/15 rounded px-1.5 py-0.5">
-          SIMULATION
-        </span>
+        <span className="font-mono text-[10px] text-cyan-500/40 border border-cyan-500/15 rounded px-1.5 py-0.5">SIMULATION</span>
       </div>
 
       <div className="p-4 space-y-2">
@@ -462,7 +436,6 @@ function CveSimulationCard() {
                 }
               `}
             >
-              {/* CVSS 分数 */}
               <div
                 className={`w-9 h-9 rounded-lg flex flex-col items-center justify-center shrink-0 border
                   ${sim.cvss >= 9.0 ? "bg-red-500/10 border-red-500/30" : "bg-orange-500/10 border-orange-500/30"}`}
@@ -473,20 +446,14 @@ function CveSimulationCard() {
                 <span className="text-[7px] font-mono text-zinc-600">CVSS</span>
               </div>
 
-              {/* 信息 */}
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-mono font-bold text-zinc-300 truncate">
-                  {sim.title}
-                </div>
+                <div className="text-xs font-mono font-bold text-zinc-300 truncate">{sim.title}</div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px] font-mono text-zinc-600">{sim.cveId}</span>
-                  <span className={`text-[8px] font-mono px-1 py-0.5 border rounded ${sevStyle.color}`}>
-                    {sevStyle.label}
-                  </span>
+                  <span className={`text-[8px] font-mono px-1 py-0.5 border rounded ${sevStyle.color}`}>{sevStyle.label}</span>
                 </div>
               </div>
 
-              {/* 状态 */}
               <div className="shrink-0">
                 {sim.status === "active" ? (
                   <span className="flex items-center gap-1 text-[10px] font-mono text-cyan-400">
@@ -538,7 +505,6 @@ function DrillStatusCard() {
       </div>
 
       <div className="p-4">
-        {/* 统计数字 */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {stats.map((s) => (
             <div key={s.label} className="px-3 py-2 rounded-lg border border-zinc-800/50 bg-zinc-900/30">
@@ -548,7 +514,6 @@ function DrillStatusCard() {
           ))}
         </div>
 
-        {/* 红蓝对抗条 */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] text-red-400 w-8">RED</span>
@@ -570,91 +535,16 @@ function DrillStatusCard() {
   );
 }
 
-/* ---------- AI 攻击分析面板 ---------- */
-function AIAnalysisPanel() {
-  return (
-    <div className="cyber-card rounded-xl border border-cyan-500/15 hover:border-cyan-500/30 transition-all">
-      <div className="flex items-center justify-between p-4 border-b border-cyan-500/10">
-        <div className="flex items-center gap-2">
-          <span className="text-cyan-400">✦</span>
-          <h3 className="font-bold text-sm tracking-wide">
-            AI 攻击<span className="text-cyan-400">分析</span>
-          </h3>
-        </div>
-        <span className="font-mono text-[10px] text-cyan-500/40 border border-cyan-500/15 rounded px-1.5 py-0.5">
-          AI-POWERED
-        </span>
-      </div>
-
-      {/* 攻击日志流 */}
-      <div className="p-4">
-        <div className="font-mono text-[10px] text-zinc-600 mb-2 tracking-wider">
-          REAL-TIME ATTACK LOG
-        </div>
-        <div className="border border-zinc-800/60 rounded-lg bg-[#0a0a0f] overflow-hidden">
-          {/* 终端头 */}
-          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/40 bg-zinc-950">
-            <span className="w-2 h-2 rounded-full bg-red-500/60" />
-            <span className="w-2 h-2 rounded-full bg-yellow-500/60" />
-            <span className="w-2 h-2 rounded-full bg-green-500/60" />
-            <span className="ml-2 font-mono text-[9px] text-zinc-600">
-              attack-monitor@cyberverse
-            </span>
-          </div>
-
-          {/* 日志内容 */}
-          <div className="p-3 space-y-1 max-h-[200px] overflow-y-auto">
-            {ATTACK_LOGS.map((log) => {
-              const statusStyle = STATUS_STYLES[log.status];
-              return (
-                <div key={log.id} className="flex items-start gap-2 text-[10px] font-mono">
-                  <span className="text-zinc-600 shrink-0">{log.time}</span>
-                  <span className="text-zinc-700 shrink-0">{log.source}</span>
-                  <span className="text-zinc-700 shrink-0">→</span>
-                  <span className="text-cyan-500/50 shrink-0">{log.target}</span>
-                  <span className="text-zinc-500 flex-1 truncate">{log.type}</span>
-                  <span className={`shrink-0 ${statusStyle.color}`}>
-                    {statusStyle.icon} {log.status.toUpperCase()}
-                  </span>
-                </div>
-              );
-            })}
-            <div className="flex items-center gap-1 pt-1">
-              <span className="text-cyan-500 text-[10px] font-mono">$</span>
-              <span className="animate-blink-cursor text-cyan-400 text-[10px]">▌</span>
-            </div>
-          </div>
-        </div>
-
-        {/* AI 分析摘要 */}
-        <div className="mt-3 p-3 border border-cyan-500/10 rounded-lg bg-cyan-500/[0.02]">
-          <div className="font-mono text-[10px] text-cyan-400/70 mb-1">
-            AI THREAT SUMMARY
-          </div>
-          <div className="text-[11px] text-zinc-400 leading-relaxed">
-            检测到 <span className="text-red-400">5</span> 次攻击尝试，
-            其中 <span className="text-green-400">2</span> 次已拦截，
-            <span className="text-yellow-400">2</span> 次已检测，
-            <span className="text-cyan-400">1</span> 次分析中。
-            SQL 注入为当前最高威胁向量。
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- 在线总览 ---------- */
 function OnlineOverview() {
   const totalOnline = VULN_LABS.reduce((sum, lab) => sum + lab.online, 0);
   const totalLearners = VULN_LABS.reduce((sum, lab) => sum + lab.learners, 0);
-  const activeDrills = 3;
   const activeCves = CVE_SIMULATIONS.filter((c) => c.status === "active").length;
 
   const items = [
     { label: "在线学员", value: totalOnline.toLocaleString(), color: "text-green-400", icon: "●" },
     { label: "累计参训", value: totalLearners.toLocaleString(), color: "text-cyan-400", icon: "◎" },
-    { label: "活跃演练", value: `${activeDrills}`, color: "text-yellow-400", icon: "◈" },
+    { label: "在线靶场", value: `${VULN_LABS.length}`, color: "text-yellow-400", icon: "◈" },
     { label: "CVE 模拟", value: `${activeCves}`, color: "text-red-400", icon: "✦" },
   ];
 
@@ -681,12 +571,21 @@ function OnlineOverview() {
 
 export default function LabPage() {
   const [mounted, setMounted] = useState(false);
+  const [activeLab, setActiveLab] = useState<VulnLab | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+
+  const handleEnterLab = (lab: VulnLab) => {
+    setActiveLab(lab);
+  };
+
+  const handleCloseTerminal = () => {
+    setActiveLab(null);
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -742,13 +641,15 @@ export default function LabPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {VULN_LABS.map((lab) => (
-              <LabCard key={lab.id} lab={lab} />
+            {VULN_LABS.map((lab, idx) => (
+              <div key={lab.id} style={{ animationDelay: `${idx * 80}ms` }}>
+                <LabCard lab={lab} onEnter={handleEnterLab} />
+              </div>
             ))}
           </div>
         </section>
 
-        {/* ===== 态势面板 (排行 + CVE + 演练 + AI分析) ===== */}
+        {/* ===== 态势面板 (排行 + CVE + 攻击链 + 状态) ===== */}
         <section className="max-w-6xl mx-auto px-6 pb-10">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-cyan-400">◎</span>
@@ -762,7 +663,12 @@ export default function LabPage() {
             <VulnRankCard />
             <CveSimulationCard />
             <DrillStatusCard />
-            <AIAnalysisPanel />
+            <StatusPanel />
+          </div>
+
+          {/* 攻击链流程图 — 全宽 */}
+          <div className="mt-5">
+            <AttackChainFlow />
           </div>
         </section>
 
@@ -770,7 +676,7 @@ export default function LabPage() {
         <footer className="border-t border-cyan-500/10 px-6 py-6">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="font-mono text-[10px] text-zinc-700">
-              © 2025 CyberVerse AI — Vuln Lab Center v1.0
+              © 2025 CyberVerse AI — Vuln Lab Center v2.0
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 font-mono text-[10px] text-zinc-700">
@@ -784,6 +690,16 @@ export default function LabPage() {
             </div>
           </div>
         </footer>
-      </div>
+
+        {/* ===== 终端模拟器弹窗 ===== */}
+        {activeLab && (
+          <TerminalSimulator
+            labId={activeLab.id}
+            labTitle={activeLab.title}
+            color={activeLab.color}
+            onClose={handleCloseTerminal}
+          />
+        )}
+    </div>
   );
 }
