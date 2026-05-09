@@ -787,6 +787,58 @@ export default function LearnPage() {
           </div>
         </section>
 
+        {/* ===== 实战工具 ===== */}
+        <section className="max-w-6xl mx-auto px-6 pb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-cyan-400">⟐</span>
+            <h2 className="text-lg font-bold tracking-wide">
+              实战<span className="text-cyan-400">工具</span>
+            </h2>
+            <div className="flex-1 h-px bg-gradient-to-r from-cyan-500/20 to-transparent ml-3" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { name: "Port Scanner", desc: "TCP/UDP 端口扫描", icon: "◉", color: "cyan" },
+              { name: "Packet Analyzer", desc: "实时流量抓包分析", icon: "◈", color: "green" },
+              { name: "GitHub Analyzer", desc: "仓库安全情报分析", icon: "⌘", color: "purple" },
+              { name: "Subdomain Finder", desc: "DNS 子域名枚举", icon: "◎", color: "orange" },
+            ].map((tool) => (
+              <a
+                key={tool.name}
+                href="/tools"
+                className="cyber-card p-4 block group cursor-pointer"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-9 h-9 rounded-lg border flex items-center justify-center text-lg ${
+                      tool.color === "cyan"
+                        ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                        : tool.color === "green"
+                        ? "bg-green-500/10 border-green-500/30 text-green-400"
+                        : tool.color === "purple"
+                        ? "bg-purple-500/10 border-purple-500/30 text-purple-400"
+                        : "bg-orange-500/10 border-orange-500/30 text-orange-400"
+                    }`}
+                  >
+                    {tool.icon}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white font-mono group-hover:text-cyan-300 transition">
+                      {tool.name}
+                    </div>
+                    <div className="text-xs text-zinc-500">{tool.desc}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-mono text-zinc-600 group-hover:text-cyan-500 transition">
+                  <span>OPEN TOOL</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
         {/* ===== 文档阅读器 ===== */}
         {activeModule && (
           <LessonViewer

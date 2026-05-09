@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/chat", label: "AI 助手", icon: "◈" },
   { href: "/learn", label: "学习中心", icon: "◎" },
   { href: "/lab", label: "漏洞靶场", icon: "✦" },
+  { href: "/tools", label: "工具中心", icon: "⟐" },
 ] as const;
 
 /* ===== 页面标题映射 ===== */
@@ -18,6 +19,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/chat": "AI-ASSISTANT",
   "/learn": "LEARNING-CENTER",
   "/lab": "VULN-LAB",
+  "/tools": "SECURITY-TOOLKIT",
 };
 
 /* ===== 顶部状态栏 + 移动端菜单 ===== */

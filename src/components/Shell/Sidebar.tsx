@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/chat", label: "AI 助手", icon: "◈", shortLabel: "CHAT" },
   { href: "/learn", label: "学习中心", icon: "◎", shortLabel: "LEARN" },
   { href: "/lab", label: "漏洞靶场", icon: "✦", shortLabel: "LAB" },
+  { href: "/tools", label: "工具中心", icon: "⟐", shortLabel: "TOOLS" },
 ] as const;
 
 /* ===== 侧边栏组件 ===== */
