@@ -52,75 +52,47 @@
   --font-serif:
     'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria,
     'Times New Roman', Times, serif;
+  --color-cyber: #00f0ff;
+  --color-cyber-dim: #00f0ff40;
+  --color-cyber-glow: #00f0ff80;
+  --color-matrix: #00ff41;
+  --color-danger: #ff0040;
+  --color-warn: #ffb800;
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #000000;
+  --foreground: #e0f0ff;
+  --card: #0a0a0f;
+  --card-foreground: #e0f0ff;
+  --popover: #0a0a0f;
+  --popover-foreground: #e0f0ff;
+  --primary: #00f0ff;
+  --primary-foreground: #000000;
+  --secondary: #111118;
+  --secondary-foreground: #e0f0ff;
+  --muted: #111118;
+  --muted-foreground: #5a6a7a;
+  --accent: #00f0ff;
+  --accent-foreground: #000000;
+  --destructive: #ff0040;
+  --border: #00f0ff20;
+  --input: #00f0ff15;
+  --ring: #00f0ff;
+  --chart-1: #00f0ff;
+  --chart-2: #00ff41;
+  --chart-3: #ffb800;
+  --chart-4: #ff0040;
+  --chart-5: #a855f7;
+  --sidebar: #050508;
+  --sidebar-foreground: #e0f0ff;
+  --sidebar-primary: #00f0ff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #111118;
+  --sidebar-accent-foreground: #e0f0ff;
+  --sidebar-border: #00f0ff20;
+  --sidebar-ring: #00f0ff;
 }
 
 @layer base {
@@ -134,4 +106,243 @@
 
 body {
   @apply font-sans;
+}
+
+/* ===== 赛博朋克自定义动画 ===== */
+
+/* 扫描线 */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* 故障闪烁 */
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+@keyframes glitch-color {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.8; text-shadow: 2px 0 #ff0040, -2px 0 #00f0ff; }
+  50% { opacity: 0.9; text-shadow: -2px 0 #ff0040, 2px 0 #00f0ff; }
+  75% { opacity: 0.85; text-shadow: 1px 0 #00f0ff, -1px 0 #ff0040; }
+}
+
+/* 脉冲发光 */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px #00f0ff40, 0 0 20px #00f0ff20; }
+  50% { box-shadow: 0 0 15px #00f0ff80, 0 0 40px #00f0ff40; }
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #00f0ff30; }
+  50% { border-color: #00f0ff80; }
+}
+
+/* 打字光标 */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 数据流动画 */
+@keyframes data-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* 矩阵雨下落 */
+@keyframes matrix-fall {
+  0% { transform: translateY(-100%); opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* 呼吸灯 */
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* 边框流光 */
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 淡入上滑 */
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 横向扫描 */
+@keyframes h-scan {
+  0% { left: -30%; }
+  100% { left: 130%; }
+}
+
+/* 工具类 */
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+.animate-glitch {
+  animation: glitch 0.3s ease-in-out infinite alternate;
+}
+
+.animate-glitch-color {
+  animation: glitch-color 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-pulse-border {
+  animation: pulse-border 3s ease-in-out infinite;
+}
+
+.animate-blink-cursor {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animate-border-flow {
+  background-size: 300% 300%;
+  animation: border-flow 4s ease infinite;
+}
+
+.animate-h-scan {
+  animation: h-scan 3s linear infinite;
+}
+
+/* 赛博朋克卡片悬浮效果 */
+.cyber-card {
+  position: relative;
+  background: #0a0a0f;
+  border: 1px solid #00f0ff20;
+  transition: all 0.3s ease;
+}
+
+.cyber-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #00f0ff08, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cyber-card:hover {
+  border-color: #00f0ff60;
+  box-shadow: 0 0 30px #00f0ff15, inset 0 0 30px #00f0ff08;
+  transform: translateY(-4px);
+}
+
+.cyber-card:hover::before {
+  opacity: 1;
+}
+
+/* 赛博朋克按钮 */
+.cyber-btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  padding: 12px 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.cyber-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #00f0ff;
+  transform: translateX(-101%);
+  transition: transform 0.3s ease;
+}
+
+.cyber-btn:hover::before {
+  transform: translateX(0);
+}
+
+.cyber-btn:hover {
+  color: #000;
+  box-shadow: 0 0 30px #00f0ff60;
+}
+
+.cyber-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.cyber-btn-primary {
+  background: #00f0ff;
+  color: #000;
+  border: none;
+}
+
+.cyber-btn-primary::before {
+  background: #00d4e0;
+}
+
+.cyber-btn-primary:hover {
+  box-shadow: 0 0 40px #00f0ff80;
+}
+
+/* 扫描线叠加 */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    #00f0ff03 2px,
+    #00f0ff03 4px
+  );
+}
+
+/* 网格背景 */
+.grid-bg {
+  background-image:
+    linear-gradient(#00f0ff08 1px, transparent 1px),
+    linear-gradient(90deg, #00f0ff08 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00f0ff30;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00f0ff60;
 }
