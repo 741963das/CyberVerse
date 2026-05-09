@@ -427,3 +427,36 @@ body {
 .hljs-strong {
   font-weight: bold;
 }
+
+/* ===== 页面进入动画 ===== */
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter-animation {
+  animation: page-enter 0.4s ease-out forwards;
+}
+
+/* ===== 页面切换过渡 ===== */
+@keyframes shimmer-line {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.page-transition-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 9999;
+  background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+  animation: shimmer-line 0.6s ease-out forwards;
+}

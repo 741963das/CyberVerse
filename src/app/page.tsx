@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import ShellLayout from "@/components/Shell/layout";
 import { useEffect, useState, useRef, useCallback } from "react";
 
 /* ===== 矩阵雨背景组件 ===== */
@@ -103,18 +102,18 @@ function ScanBeam() {
 /* ===== 入口卡片数据 ===== */
 const ENTRY_CARDS = [
   {
-    title: "AI 安全学习",
-    desc: "AI驱动的自适应安全课程，精准匹配你的技能等级",
-    href: "/learn",
-    icon: "⬡",
-    tag: "AI-POWERED",
+    title: "AI 安全助手",
+    desc: "AI驱动的安全知识对话，实时解答你的网络安全疑问",
+    href: "/chat",
+    icon: "◈",
+    tag: "AI-CHAT",
     color: "cyan" as const,
   },
   {
     title: "漏洞靶场",
     desc: "真实漏洞环境实战演练，从SQL注入到XSS全覆盖",
-    href: "/learn",
-    icon: "◈",
+    href: "/lab",
+    icon: "✦",
     tag: "LAB",
     color: "danger" as const,
   },
@@ -171,8 +170,7 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <ShellLayout>
-      <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
         {/* ===== 动态背景层 ===== */}
         <MatrixRain />
         <ParticleGrid />
@@ -353,6 +351,5 @@ export default function HomePage() {
           </div>
         </footer>
       </div>
-    </ShellLayout>
   );
 }

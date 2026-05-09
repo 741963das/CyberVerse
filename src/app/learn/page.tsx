@@ -1,6 +1,5 @@
 "use client";
 
-import ShellLayout from "@/components/Shell/layout";
 import { useState, useEffect, useMemo } from "react";
 
 /* ======================================================================
@@ -690,8 +689,7 @@ export default function LearnPage() {
   if (!mounted) return null;
 
   return (
-    <ShellLayout>
-      <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black">
         {/* ===== Hero 区域 ===== */}
         <section className="relative border-b border-cyan-500/15 overflow-hidden">
           <ScanBackground />
@@ -791,6 +789,5 @@ export default function LearnPage() {
           </div>
         </footer>
       </div>
-    </ShellLayout>
   );
 }

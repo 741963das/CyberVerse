@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
+import ShellLayout from '@/components/Shell/Layout';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export default function RootLayout({
     <html lang="zh-CN" className="dark">
       <body className="antialiased bg-black text-white">
         {isDev && <Inspector />}
-        {children}
+        <ShellLayout>{children}</ShellLayout>
       </body>
     </html>
   );
