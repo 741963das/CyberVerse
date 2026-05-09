@@ -346,3 +346,84 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #00f0ff60;
 }
+
+/* ===== Highlight.js 赛博朋克暗色主题 ===== */
+.hljs {
+  background: #0d0d12 !important;
+  color: #c9d1d9 !important;
+  padding: 1rem !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.6 !important;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #5a6a7a !important;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal {
+  color: #00f0ff !important;
+}
+
+.hljs-string,
+.hljs-template-variable,
+.hljs-addition {
+  color: #00ff88 !important;
+}
+
+.hljs-number,
+.hljs-built_in {
+  color: #ffb800 !important;
+}
+
+.hljs-title,
+.hljs-section {
+  color: #e0f0ff !important;
+  font-weight: bold;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: #a855f7 !important;
+}
+
+.hljs-variable,
+.hljs-attr {
+  color: #ff6b6b !important;
+}
+
+.hljs-regexp {
+  color: #00f0ff !important;
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  color: #ffb800 !important;
+}
+
+.hljs-meta {
+  color: #5a6a7a !important;
+}
+
+.hljs-deletion {
+  color: #ff0040 !important;
+}
+
+.hljs-params {
+  color: #c9d1d9 !important;
+}
+
+.hljs-attribute {
+  color: #00ff88 !important;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
