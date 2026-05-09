@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { getModuleContent } from "@/data/learnContent";
+import type { ModuleContent } from "@/data/learnContent";
+import LessonViewer from "@/components/learn/LessonViewer";
 
 /* ======================================================================
    数据层
@@ -274,10 +277,11 @@ function ProgressBar({
 }
 
 /* ---------- 分类模块卡片 ---------- */
-function ModuleCard({ module }: { module: LearnModule }) {
+function ModuleCard({ module, onClick }: { module: LearnModule; onClick: () => void }) {
   const colors = COLOR_MAP[module.color];
   return (
     <div
+      onClick={onClick}
       className={`
         cyber-card rounded-xl p-5 cursor-pointer group
         ${colors.border} ${colors.glow}
@@ -681,10 +685,17 @@ function StatsBar() {
 
 export default function LearnPage() {
   const [mounted, setMounted] = useState(false);
+  const [activeModule, setActiveModule] = useState<ModuleContent | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  /* 点击模块卡片 → 打开文档 */
+  const handleModuleClick = (moduleId: string) => {
+    const content = getModuleContent(moduleId);
+    if (content) setActiveModule(content);
+  };
 
   if (!mounted) return null;
 
@@ -734,7 +745,7 @@ export default function LearnPage() {
           {/* 卡片网格 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {LEARN_MODULES.map((mod) => (
-              <ModuleCard key={mod.id} module={mod} />
+              <ModuleCard key={mod.id} module={mod} onClick={() => handleModuleClick(mod.id)} />
             ))}
           </div>
         </section>
@@ -775,6 +786,14 @@ export default function LearnPage() {
             ))}
           </div>
         </section>
+
+        {/* ===== 文档阅读器 ===== */}
+        {activeModule && (
+          <LessonViewer
+            module={activeModule}
+            onClose={() => setActiveModule(null)}
+          />
+        )}
 
         {/* ===== 底部 ===== */}
         <footer className="border-t border-cyan-500/10 px-6 py-6">
