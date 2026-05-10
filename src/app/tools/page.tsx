@@ -58,44 +58,65 @@ interface GitHubRepo {
 }
 
 /* ============================================================
-   MOCK DATA
+   API HELPERS — call backend simulation kernel
    ============================================================ */
 
-const MOCK_PORTS: PortResult[] = [
-  { port: 21, status: "OPEN", service: "FTP", banner: "vsftpd 3.0.3" },
-  { port: 22, status: "OPEN", service: "SSH", banner: "OpenSSH 8.9p1" },
-  { port: 25, status: "FILTERED", service: "SMTP" },
-  { port: 80, status: "OPEN", service: "HTTP", banner: "nginx/1.24.0" },
-  { port: 110, status: "CLOSED", service: "POP3" },
-  { port: 443, status: "OPEN", service: "HTTPS", banner: "nginx/1.24.0" },
-  { port: 3306, status: "CLOSED", service: "MYSQL" },
-  { port: 5432, status: "FILTERED", service: "POSTGRESQL" },
-  { port: 6379, status: "OPEN", service: "REDIS", banner: "Redis 7.2.3" },
-  { port: 8080, status: "OPEN", service: "HTTP-PROXY", banner: "Apache Tomcat 10.1" },
-  { port: 8443, status: "CLOSED", service: "HTTPS-ALT" },
-  { port: 9090, status: "OPEN", service: "PROMETHEUS" },
-  { port: 27017, status: "FILTERED", service: "MONGODB" },
-];
+async function apiScan(host: string): Promise<PortResult[]> {
+  const res = await fetch("/api/scan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ host }),
+  });
+  if (!res.ok) throw new Error("Scan API error");
+  const data = await res.json();
+  return (data.ports ?? []) as PortResult[];
+}
 
-const PROTOCOLS = ["TCP", "UDP", "HTTP", "DNS", "TLS", "ICMP", "ARP"];
-const STATUSES = ["OK", "OK", "OK", "RST", "TIMEOUT", "SYN-ACK"];
-const PACKET_INFOS = [
-  "GET /api/v1/users HTTP/1.1",
-  "DNS A query example.com",
-  "TLS Client Hello",
-  "TCP SYN → SYN-ACK",
-  "HTTP 200 OK (1.2KB)",
-  "ICMP Echo Request",
-  "ARP Who has 192.168.1.1?",
-  "TCP FIN, ACK",
-  "DNS AAAA query api.example.com",
-  "TLS Certificate Verify",
-  "HTTP 301 Moved Permanently",
-  "TCP RST from 10.0.0.5",
-  "UDP DNS Response 93.184.216.34",
-  "ICMP Destination Unreachable",
-  "ARP Reply 192.168.1.1 is at aa:bb:cc:dd:ee:ff",
-];
+async function apiPackets(count: number = 10): Promise<PacketRow[]> {
+  const res = await fetch("/api/packet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "start", count }),
+  });
+  if (!res.ok) throw new Error("Packet API error");
+  const data = await res.json();
+  return (data.packets ?? []).map(
+    (p: Record<string, unknown>, i: number) => ({
+      id: i + 1,
+      time: (p.time as string) || "00:00:00.000",
+      srcIp: (p.source as string) || "0.0.0.0",
+      dstIp: (p.destination as string) || "0.0.0.0",
+      protocol: (p.proto as string) || "TCP",
+      length: (p.length as number) || 0,
+      status: (p.status as string) || "OK",
+      info: (p.info as string) || "",
+    })
+  );
+}
+
+async function apiGitHub(repoUrl: string): Promise<GitHubRepo> {
+  const res = await fetch("/api/github", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo: repoUrl }),
+  });
+  if (!res.ok) throw new Error("GitHub API error");
+  const data = await res.json();
+  return {
+    name: data.name,
+    description: data.description,
+    language: data.language,
+    stars: data.stars,
+    forks: data.forks,
+    updatedAt: data.latestCommit,
+    topics: data.topics,
+    readme: data.readme,
+  };
+}
+
+/* ============================================================
+   FALLBACK MOCK — only used for Subdomain Finder (no API yet)
+   ============================================================ */
 
 const MOCK_SUBDOMAINS: SubdomainResult[] = [
   { domain: "api.example.com", ip: "93.184.216.34", status: 200, tech: "Node.js / Express" },
@@ -111,31 +132,6 @@ const MOCK_SUBDOMAINS: SubdomainResult[] = [
   { domain: "monitor.example.com", ip: "10.0.0.60", status: 200, tech: "Grafana" },
   { domain: "log.example.com", ip: "10.0.0.65", status: 200, tech: "ELK Stack" },
 ];
-
-const MOCK_GITHUB: GitHubRepo = {
-  name: "cybersecurity-toolkit",
-  description: "AI-driven offensive & defensive security toolkit for penetration testers and SOC analysts.",
-  language: "TypeScript",
-  stars: 12847,
-  forks: 2093,
-  updatedAt: "2025-06-12T08:30:00Z",
-  topics: ["security", "pentesting", "ai", "cybersecurity", "tools", "osint"],
-  readme: `# CyberSecurity Toolkit\n\nAn AI-powered security toolkit designed for modern penetration testing and defensive operations.\n\n## Features\n\n- 🔍 **Port Scanner** — High-speed TCP/UDP port scanning with service detection\n- 🛡️ **Vulnerability Scanner** — CVE-based vulnerability assessment\n- 📡 **Packet Analyzer** — Real-time network traffic inspection\n- 🌐 **Subdomain Finder** — DNS enumeration and subdomain discovery\n- 🤖 **AI Analysis** — ML-based threat detection and classification\n\n## Installation\n\n\`\`\`bash\ngit clone https://github.com/example/cybersecurity-toolkit.git\ncd cybersecurity-toolkit\npnpm install\npnpm dev\n\`\`\`\n\n## Usage\n\n\`\`\`typescript\nimport { Scanner } from './src/scanner';\n\nconst scanner = new Scanner({ target: '192.168.1.0/24' });\nconst results = await scanner.run();\nconsole.log(results);\n\`\`\`\n\n## Contributing\n\n1. Fork the repository\n2. Create your feature branch\n3. Commit your changes\n4. Push to the branch\n5. Open a Pull Request\n\n## License\n\nMIT License - see [LICENSE](LICENSE) for details.`,
-};
-
-/* ============================================================
-   UTILITY
-   ============================================================ */
-
-function randomIp(): string {
-  return `${Math.floor(Math.random() * 223) + 1}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
-}
-
-function randomTime(): string {
-  const s = Math.floor(Math.random() * 59) + 1;
-  const ms = Math.floor(Math.random() * 999);
-  return `00:00:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
-}
 
 /* ============================================================
    COMPONENTS
@@ -160,35 +156,40 @@ function PortScanner() {
   const [results, setResults] = useState<PortResult[]>([]);
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [error, setError] = useState("");
 
-  const startScan = useCallback(() => {
+  const startScan = useCallback(async () => {
     if (scanning) return;
     setScanning(true);
     setResults([]);
     setProgress(0);
-    let idx = 0;
-    timerRef.current = setInterval(() => {
-      if (idx < MOCK_PORTS.length) {
-        setResults((prev) => [...prev, MOCK_PORTS[idx]]);
-        setProgress(Math.round(((idx + 1) / MOCK_PORTS.length) * 100));
-        idx++;
-      } else {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setScanning(false);
+    setError("");
+    try {
+      const allPorts = await apiScan(target);
+      // Animate results appearing one by one
+      for (let i = 0; i < allPorts.length; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+        setResults((prev) => [...prev, allPorts[i]]);
+        setProgress(Math.round(((i + 1) / allPorts.length) * 100));
       }
-    }, 300);
-  }, [scanning]);
+    } catch {
+      setError("Scan failed. API unreachable.");
+    } finally {
+      setScanning(false);
+    }
+  }, [scanning, target]);
 
   const resetScan = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
     setScanning(false);
     setResults([]);
     setProgress(0);
+    setError("");
   }, []);
 
   const copyResults = useCallback(() => {
-    const text = results.map((r) => `${r.port}\t${r.status}\t${r.service}`).join("\n");
+    const text = results
+      .map((r) => `${r.port}\t${r.status}\t${r.service}`)
+      .join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -203,7 +204,9 @@ function PortScanner() {
           <Radar className="w-5 h-5 text-cyan-400" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white font-mono">Port Scanner</h3>
+          <h3 className="text-lg font-bold text-white font-mono">
+            Port Scanner
+          </h3>
           <p className="text-xs text-zinc-500">TCP/UDP Service Detection</p>
         </div>
       </div>
@@ -220,11 +223,18 @@ function PortScanner() {
           disabled={scanning}
           className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm font-mono hover:bg-cyan-500/20 transition flex items-center gap-2 disabled:opacity-50"
         >
-          {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          {scanning ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Play className="w-4 h-4" />
+          )}
           {scanning ? "Scanning" : "Scan"}
         </button>
         {results.length > 0 && !scanning && (
-          <button onClick={resetScan} className="px-3 py-2 border border-zinc-700 rounded-lg text-zinc-400 text-sm font-mono hover:border-zinc-500 transition">
+          <button
+            onClick={resetScan}
+            className="px-3 py-2 border border-zinc-700 rounded-lg text-zinc-400 text-sm font-mono hover:border-zinc-500 transition"
+          >
             Reset
           </button>
         )}
@@ -245,15 +255,27 @@ function PortScanner() {
         </div>
       )}
 
+      {error && (
+        <div className="mb-4 text-xs font-mono text-red-400 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+
       {results.length > 0 && (
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-mono text-zinc-500">Scan Results</span>
+            <span className="text-xs font-mono text-zinc-500">
+              Scan Results
+            </span>
             <button
               onClick={copyResults}
               className="text-xs font-mono text-zinc-500 hover:text-cyan-400 transition flex items-center gap-1"
             >
-              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
@@ -272,7 +294,9 @@ function PortScanner() {
                   <tr
                     key={r.port}
                     className="border-b border-zinc-800/50 hover:bg-cyan-500/5 transition"
-                    style={{ animation: `fadeIn 0.3s ease-out ${i * 0.05}s both` }}
+                    style={{
+                      animation: `fadeIn 0.3s ease-out ${i * 0.05}s both`,
+                    }}
                   >
                     <td className="py-1.5 px-3 text-cyan-300">{r.port}</td>
                     <td className="py-1.5 px-3">
@@ -281,8 +305,8 @@ function PortScanner() {
                           r.status === "OPEN"
                             ? "text-green-400"
                             : r.status === "CLOSED"
-                            ? "text-red-400"
-                            : "text-yellow-400"
+                              ? "text-red-400"
+                              : "text-yellow-400"
                         }`}
                       >
                         <CircleDot className="w-2.5 h-2.5" />
@@ -290,7 +314,9 @@ function PortScanner() {
                       </span>
                     </td>
                     <td className="py-1.5 px-3 text-zinc-300">{r.service}</td>
-                    <td className="py-1.5 px-3 text-zinc-600 truncate max-w-[180px]">{r.banner || "—"}</td>
+                    <td className="py-1.5 px-3 text-zinc-600 truncate max-w-[180px]">
+                      {r.banner || "\u2014"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -304,23 +330,32 @@ function PortScanner() {
 
 // --- GitHub Analyzer ---
 function GitHubAnalyzer() {
-  const [repoUrl, setRepoUrl] = useState("https://github.com/example/cybersecurity-toolkit");
+  const [repoUrl, setRepoUrl] = useState(
+    "https://github.com/example/cybersecurity-toolkit"
+  );
   const [loading, setLoading] = useState(false);
   const [repo, setRepo] = useState<GitHubRepo | null>(null);
   const [expandedReadme, setExpandedReadme] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
 
-  const analyze = useCallback(() => {
+  const analyze = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setRepo(MOCK_GITHUB);
+    setRepo(null);
+    setError("");
+    try {
+      const data = await apiGitHub(repoUrl);
+      setRepo(data);
+    } catch {
+      setError("GitHub analysis failed. API unreachable.");
+    } finally {
       setLoading(false);
-    }, 1500);
-  }, []);
+    }
+  }, [repoUrl]);
 
   const copyRepoInfo = useCallback(() => {
     if (!repo) return;
-    const text = `${repo.name}\n${repo.description}\n⭐ ${repo.stars} | 🍴 ${repo.forks}\nLanguage: ${repo.language}\nUpdated: ${repo.updatedAt}`;
+    const text = `${repo.name}\n${repo.description}\n\u2B50 ${repo.stars} | \uD83C\uDF74 ${repo.forks}\nLanguage: ${repo.language}\nUpdated: ${repo.updatedAt}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -343,7 +378,9 @@ function GitHubAnalyzer() {
           <Github className="w-5 h-5 text-purple-400" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white font-mono">GitHub Analyzer</h3>
+          <h3 className="text-lg font-bold text-white font-mono">
+            GitHub Analyzer
+          </h3>
           <p className="text-xs text-zinc-500">Repository Intelligence</p>
         </div>
       </div>
@@ -360,13 +397,26 @@ function GitHubAnalyzer() {
           disabled={loading}
           className="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 text-sm font-mono hover:bg-purple-500/20 transition flex items-center gap-2 disabled:opacity-50"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Search className="w-4 h-4" />
+          )}
           {loading ? "Analyzing" : "Analyze"}
         </button>
       </div>
 
+      {error && (
+        <div className="mb-4 text-xs font-mono text-red-400 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+
       {repo && (
-        <div className="space-y-4" style={{ animation: "fadeIn 0.4s ease-out" }}>
+        <div
+          className="space-y-4"
+          style={{ animation: "fadeIn 0.4s ease-out" }}
+        >
           <div className="flex items-start justify-between">
             <div>
               <h4 className="text-white font-mono font-bold">{repo.name}</h4>
@@ -376,36 +426,48 @@ function GitHubAnalyzer() {
               onClick={copyRepoInfo}
               className="text-xs font-mono text-zinc-500 hover:text-purple-400 transition flex items-center gap-1 shrink-0 ml-2"
             >
-              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
             </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-black/60 border border-zinc-800 rounded-lg p-3 text-center">
-              <div className="text-xl font-bold text-white font-mono">{repo.stars.toLocaleString()}</div>
+              <div className="text-xl font-bold text-white font-mono">
+                {repo.stars.toLocaleString()}
+              </div>
               <div className="text-xs text-zinc-500">Stars</div>
             </div>
             <div className="bg-black/60 border border-zinc-800 rounded-lg p-3 text-center">
-              <div className="text-xl font-bold text-white font-mono">{repo.forks.toLocaleString()}</div>
+              <div className="text-xl font-bold text-white font-mono">
+                {repo.forks.toLocaleString()}
+              </div>
               <div className="text-xs text-zinc-500">Forks</div>
             </div>
             <div className="bg-black/60 border border-zinc-800 rounded-lg p-3 text-center">
               <div className="flex items-center justify-center gap-1.5">
-                <span className={`w-2.5 h-2.5 rounded-full ${langColors[repo.language] || "bg-zinc-400"}`} />
-                <span className="text-sm font-bold text-white font-mono">{repo.language}</span>
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${langColors[repo.language] || "bg-zinc-400"}`}
+                />
+                <span className="text-sm font-bold text-white font-mono">
+                  {repo.language}
+                </span>
               </div>
               <div className="text-xs text-zinc-500">Language</div>
             </div>
             <div className="bg-black/60 border border-zinc-800 rounded-lg p-3 text-center">
               <div className="text-sm font-bold text-white font-mono">
-                {new Date(repo.updatedAt).toLocaleDateString()}
+                {repo.updatedAt}
               </div>
               <div className="text-xs text-zinc-500">Updated</div>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {repo.topics.map((t) => (
+            {repo.topics.map((t: string) => (
               <span
                 key={t}
                 className="px-2 py-0.5 text-xs font-mono bg-purple-500/10 border border-purple-500/20 rounded text-purple-300"
@@ -420,12 +482,18 @@ function GitHubAnalyzer() {
               onClick={() => setExpandedReadme(!expandedReadme)}
               className="flex items-center gap-1 text-xs font-mono text-zinc-500 hover:text-cyan-400 transition mb-2"
             >
-              {expandedReadme ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {expandedReadme ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
               README.md
             </button>
             {expandedReadme && (
               <div className="bg-black/80 border border-zinc-800 rounded-lg p-4 max-h-64 overflow-auto">
-                <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap">{repo.readme}</pre>
+                <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap">
+                  {repo.readme}
+                </pre>
               </div>
             )}
           </div>
@@ -440,27 +508,30 @@ function PacketAnalyzer() {
   const [capturing, setCapturing] = useState(false);
   const [packets, setPackets] = useState<PacketRow[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [error, setError] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const idRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const startCapture = useCallback(() => {
     setCapturing(true);
     setPackets([]);
-    idRef.current = 0;
-    timerRef.current = setInterval(() => {
-      const newPacket: PacketRow = {
-        id: ++idRef.current,
-        time: randomTime(),
-        srcIp: randomIp(),
-        dstIp: randomIp(),
-        protocol: PROTOCOLS[Math.floor(Math.random() * PROTOCOLS.length)],
-        length: Math.floor(Math.random() * 1400) + 40,
-        status: STATUSES[Math.floor(Math.random() * STATUSES.length)],
-        info: PACKET_INFOS[Math.floor(Math.random() * PACKET_INFOS.length)],
-      };
-      setPackets((prev) => [...prev.slice(-49), newPacket]);
-    }, 600);
+    setError("");
+    timerRef.current = setInterval(async () => {
+      try {
+        const newPackets = await apiPackets(3);
+        setPackets((prev) => {
+          const merged = [...prev, ...newPackets.map((p, i) => ({
+            ...p,
+            id: prev.length + i + 1,
+          }))];
+          return merged.slice(-50);
+        });
+      } catch {
+        setError("Packet capture failed.");
+        if (timerRef.current) clearInterval(timerRef.current);
+        setCapturing(false);
+      }
+    }, 1200);
   }, []);
 
   const stopCapture = useCallback(() => {
@@ -500,7 +571,9 @@ function PacketAnalyzer() {
             <Wifi className="w-5 h-5 text-green-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white font-mono">Packet Analyzer</h3>
+            <h3 className="text-lg font-bold text-white font-mono">
+              Packet Analyzer
+            </h3>
             <p className="text-xs text-zinc-500">Real-time Traffic Capture</p>
           </div>
         </div>
@@ -526,6 +599,12 @@ function PacketAnalyzer() {
         </button>
       </div>
 
+      {error && (
+        <div className="mb-3 text-xs font-mono text-red-400 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="bg-black/80 border border-zinc-800 rounded-lg overflow-auto max-h-[340px]"
@@ -545,8 +624,13 @@ function PacketAnalyzer() {
           <tbody>
             {packets.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-zinc-600">
-                  {capturing ? "Waiting for packets..." : "Click Capture to start"}
+                <td
+                  colSpan={7}
+                  className="text-center py-8 text-zinc-600"
+                >
+                  {capturing
+                    ? "Waiting for packets..."
+                    : "Click Capture to start"}
                 </td>
               </tr>
             )}
@@ -555,14 +639,20 @@ function PacketAnalyzer() {
                 key={`${pkt.id}-${i}`}
                 onClick={() => setSelectedIdx(i)}
                 className={`border-b border-zinc-800/50 cursor-pointer transition ${
-                  selectedIdx === i ? "bg-cyan-500/10" : "hover:bg-zinc-800/50"
+                  selectedIdx === i
+                    ? "bg-cyan-500/10"
+                    : "hover:bg-zinc-800/50"
                 }`}
               >
                 <td className="py-1 px-2 text-zinc-600">{pkt.id}</td>
                 <td className="py-1 px-2 text-zinc-400">{pkt.time}</td>
                 <td className="py-1 px-2 text-cyan-300">{pkt.srcIp}</td>
                 <td className="py-1 px-2 text-cyan-300">{pkt.dstIp}</td>
-                <td className={`py-1 px-2 ${protoColor[pkt.protocol] || "text-zinc-300"}`}>{pkt.protocol}</td>
+                <td
+                  className={`py-1 px-2 ${protoColor[pkt.protocol] || "text-zinc-300"}`}
+                >
+                  {pkt.protocol}
+                </td>
                 <td className="py-1 px-2 text-zinc-400">{pkt.length}</td>
                 <td className="py-1 px-2 text-zinc-500">{pkt.status}</td>
               </tr>
@@ -576,13 +666,37 @@ function PacketAnalyzer() {
           className="mt-3 bg-black/60 border border-zinc-800 rounded-lg p-3"
           style={{ animation: "fadeIn 0.2s ease-out" }}
         >
-          <div className="text-xs font-mono text-zinc-500 mb-1">Packet Detail #{packets[selectedIdx].id}</div>
-          <div className="text-xs font-mono text-cyan-300">{packets[selectedIdx].info}</div>
+          <div className="text-xs font-mono text-zinc-500 mb-1">
+            Packet Detail #{packets[selectedIdx].id}
+          </div>
+          <div className="text-xs font-mono text-cyan-300">
+            {packets[selectedIdx].info}
+          </div>
           <div className="grid grid-cols-2 gap-x-4 mt-2 text-xs font-mono">
-            <div><span className="text-zinc-500">SRC:</span> <span className="text-cyan-300">{packets[selectedIdx].srcIp}</span></div>
-            <div><span className="text-zinc-500">DST:</span> <span className="text-cyan-300">{packets[selectedIdx].dstIp}</span></div>
-            <div><span className="text-zinc-500">PROTO:</span> <span className={protoColor[packets[selectedIdx].protocol]}>{packets[selectedIdx].protocol}</span></div>
-            <div><span className="text-zinc-500">STATUS:</span> <span className="text-zinc-300">{packets[selectedIdx].status}</span></div>
+            <div>
+              <span className="text-zinc-500">SRC:</span>{" "}
+              <span className="text-cyan-300">
+                {packets[selectedIdx].srcIp}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500">DST:</span>{" "}
+              <span className="text-cyan-300">
+                {packets[selectedIdx].dstIp}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500">PROTO:</span>{" "}
+              <span className={protoColor[packets[selectedIdx].protocol]}>
+                {packets[selectedIdx].protocol}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500">STATUS:</span>{" "}
+              <span className="text-zinc-300">
+                {packets[selectedIdx].status}
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -590,7 +704,9 @@ function PacketAnalyzer() {
       {capturing && (
         <div className="mt-2 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs font-mono text-green-400">Capturing... {packets.length} packets</span>
+          <span className="text-xs font-mono text-green-400">
+            Capturing... {packets.length} packets
+          </span>
         </div>
       )}
     </div>
@@ -625,7 +741,9 @@ function SubdomainFinder() {
   }, [domain]);
 
   const copyResults = useCallback(() => {
-    const text = results.map((r) => `${r.domain}\t${r.ip}\t${r.status}\t${r.tech}`).join("\n");
+    const text = results
+      .map((r) => `${r.domain}\t${r.ip}\t${r.status}\t${r.tech}`)
+      .join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -653,7 +771,9 @@ function SubdomainFinder() {
           <Search className="w-5 h-5 text-orange-400" />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white font-mono">Subdomain Finder</h3>
+          <h3 className="text-lg font-bold text-white font-mono">
+            Subdomain Finder
+          </h3>
           <p className="text-xs text-zinc-500">DNS Enumeration Engine</p>
         </div>
       </div>
@@ -670,7 +790,11 @@ function SubdomainFinder() {
           disabled={scanning}
           className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-mono hover:bg-orange-500/20 transition flex items-center gap-2 disabled:opacity-50"
         >
-          {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+          {scanning ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Search className="w-4 h-4" />
+          )}
           {scanning ? "Scanning" : "Find"}
         </button>
       </div>
@@ -679,13 +803,18 @@ function SubdomainFinder() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-mono text-zinc-500">
-              Found {results.length} subdomain{results.length > 1 ? "s" : ""}
+              Found {results.length} subdomain
+              {results.length > 1 ? "s" : ""}
             </span>
             <button
               onClick={copyResults}
               className="text-xs font-mono text-zinc-500 hover:text-orange-400 transition flex items-center gap-1"
             >
-              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
@@ -694,16 +823,26 @@ function SubdomainFinder() {
               <div
                 key={r.domain}
                 className="flex items-center justify-between bg-black/60 border border-zinc-800 rounded-lg px-3 py-2 hover:border-orange-500/20 transition group"
-                style={{ animation: `fadeIn 0.3s ease-out ${i * 0.06}s both` }}
+                style={{
+                  animation: `fadeIn 0.3s ease-out ${i * 0.06}s both`,
+                }}
               >
                 <div className="flex items-center gap-3">
                   <span className="w-2 h-2 rounded-full bg-orange-400/60 group-hover:bg-orange-400 transition" />
-                  <span className="text-sm font-mono text-white">{r.domain}</span>
+                  <span className="text-sm font-mono text-white">
+                    {r.domain}
+                  </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-mono">
-                  <span className="text-zinc-500 hidden sm:inline">{r.ip}</span>
-                  <span className={statusColor(r.status)}>{r.status || "TIMEOUT"}</span>
-                  <span className="text-zinc-600 hidden md:inline">{r.tech}</span>
+                  <span className="text-zinc-500 hidden sm:inline">
+                    {r.ip}
+                  </span>
+                  <span className={statusColor(r.status)}>
+                    {r.status || "TIMEOUT"}
+                  </span>
+                  <span className="text-zinc-600 hidden md:inline">
+                    {r.tech}
+                  </span>
                 </div>
               </div>
             ))}
@@ -714,7 +853,9 @@ function SubdomainFinder() {
       {scanning && (
         <div className="mt-3 flex items-center gap-2">
           <Loader2 className="w-3 h-3 animate-spin text-orange-400" />
-          <span className="text-xs font-mono text-orange-400">Enumerating DNS records...</span>
+          <span className="text-xs font-mono text-orange-400">
+            Enumerating DNS records...
+          </span>
         </div>
       )}
     </div>
@@ -726,8 +867,18 @@ function StatsBar() {
   const stats = [
     { label: "Tools Online", value: 4, icon: Shield, color: "text-cyan-400" },
     { label: "Active Scans", value: 17, icon: Radar, color: "text-green-400" },
-    { label: "Packets Captured", value: 1247, icon: Wifi, color: "text-purple-400" },
-    { label: "Subdomains Found", value: 384, icon: Search, color: "text-orange-400" },
+    {
+      label: "Packets Captured",
+      value: 1247,
+      icon: Wifi,
+      color: "text-purple-400",
+    },
+    {
+      label: "Subdomains Found",
+      value: 384,
+      icon: Search,
+      color: "text-orange-400",
+    },
   ];
 
   return (
@@ -739,7 +890,9 @@ function StatsBar() {
           style={{ animation: `fadeIn 0.4s ease-out ${i * 0.1}s both` }}
         >
           <s.icon className={`w-5 h-5 mx-auto mb-2 ${s.color}`} />
-          <div className="text-2xl font-bold text-white font-mono">{s.value}</div>
+          <div className="text-2xl font-bold text-white font-mono">
+            {s.value}
+          </div>
           <div className="text-xs text-zinc-500 font-mono">{s.label}</div>
         </div>
       ))}
@@ -753,7 +906,8 @@ function AlertBanner() {
     <div className="mb-6 flex items-center gap-3 px-4 py-2.5 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
       <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
       <p className="text-xs font-mono text-yellow-400/80">
-        Authorized use only. All scanning activities are simulated. No real network traffic is generated.
+        Authorized use only. All scanning activities are simulated via backend
+        kernel. No real network traffic is generated.
       </p>
     </div>
   );
@@ -775,7 +929,9 @@ export default function ToolsPage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex items-center gap-3">
           <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-          <span className="text-cyan-400 font-mono text-sm">INITIALIZING TOOLKIT...</span>
+          <span className="text-cyan-400 font-mono text-sm">
+            INITIALIZING TOOLKIT...
+          </span>
         </div>
       </div>
     );
@@ -789,13 +945,16 @@ export default function ToolsPage() {
         <div className="relative z-10 max-w-5xl mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-xs font-mono text-cyan-400 tracking-widest uppercase">Security Toolkit</span>
+            <span className="text-xs font-mono text-cyan-400 tracking-widest uppercase">
+              Security Toolkit
+            </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white font-mono tracking-tight">
             Security <span className="text-cyan-400">Toolkit</span>
           </h1>
           <p className="text-zinc-400 mt-3 text-sm md:text-base max-w-2xl">
-            AI-driven offensive &amp; defensive security utilities. All tools run in sandboxed environment with simulated data.
+            AI-driven offensive &amp; defensive security utilities. All tools
+            run in sandboxed environment with simulated data.
           </p>
         </div>
       </section>
@@ -816,7 +975,8 @@ export default function ToolsPage() {
       {/* Footer */}
       <footer className="border-t border-zinc-800/50 py-6 px-6 text-center">
         <p className="text-xs font-mono text-zinc-600">
-          CyberVerse Security Toolkit &middot; All tools are for educational purposes only
+          CyberVerse Security Toolkit &middot; All tools are for educational
+          purposes only
         </p>
       </footer>
     </div>
