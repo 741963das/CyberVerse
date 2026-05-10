@@ -243,6 +243,8 @@ body {
   background: linear-gradient(135deg, #00f0ff08, transparent 60%);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .cyber-card:hover {
