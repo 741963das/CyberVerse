@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 检查环境变量
+    const apiToken = process.env.COZE_WORKLOAD_API_TOKEN;
+    const spaceId = process.env.COZE_PROJECT_SPACE_ID;
+
+    if (!apiToken || !spaceId) {
+      return new Response(
+        JSON.stringify({ 
+          error: "环境变量未配置",
+          detail: "请在 Vercel Settings → Environment Variables 中添加 COZE_WORKLOAD_API_TOKEN 和 COZE_PROJECT_SPACE_ID"
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
     const config = new Config();
     const client = new LLMClient(config, customHeaders);
